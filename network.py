@@ -34,24 +34,28 @@ class Network:
         return layer_value
     
     def SGD(self, training_data, epochs, mini_batch_size, learning_rate):
+        '''The learning algorythm for the network.'''
         training_data = list(training_data)
-        n = len(training_data)
+        training_data_size = len(training_data)
 
-        for _ in range(epochs):
+        # Batch the data and run through all the epochs
+        for epoch in range(epochs):
             random.shuffle(training_data)
-            for i in range((training_data // mini_batch_size) + 1):
+            for i in range((training_data_size // mini_batch_size) + 1):
                 try:
                     batch = training_data[i*mini_batch_size : (i+1)*mini_batch_size]
                     for elt in batch:
-                        pass
+                        self.update_mini_batch(elt, learning_rate)
+                    print(f"Epoch {epoch}/{training_data_size // mini_batch_size} complete.")
                 except IndexError:
                     continue
 
     def update_mini_batch(self, mini_batch, learning_rate):
+        '''Applies gradient descent to the given batch.'''
         gradient_b = [np.zeros(b.shape) for b in self.biases]
         gradient_W = [np.zeros(W.shape) for W in self.weights]
         for x, y in mini_batch: 
-            delta_gradient_b, delta_gradient_W = None
+            delta_gradient_b, delta_gradient_W = self.backprop(x, y)
 
             # Update the weights and biases
             for i, delta_grad in enumerate(delta_gradient_b):
@@ -65,9 +69,46 @@ class Network:
         for i, elt in enumerate(self.weights):
             self.weights[i] = elt - (learning_rate / len(mini_batch) * sum(gradient_W))
 
+    def backprop(self, x, y):
+        '''Calculates the gradient of the cost function with the backpropagation algorythm.'''
+        gradient_b = [np.zeros(b.shape) for b in self.biases]
+        gradient_W = [np.zeros(W.shape) for W in self.weights]
+
+        # Feedforward (different to the method because we need more information)
+        activation = x
+        activations = [x] # Each layer stores its activations
+        pre_sigmoid_act = []
+        for W, b in zip(self.weights, self.biases):
+            activation = W.dot(activation) + b
+            pre_sigmoid_act.append(activation)
+            activation = sigma_fun(activation)
+            activations.append(activation)
+
+        # Output layer error
+        delta = self.cost_fun_derivative(activations[-1], y) * sigma_fun_derivative(pre_sigmoid_act[-1])
+        gradient_W[-1] = delta.dot(activations[-2].transpose())
+        gradient_b[-1] = delta
+
+        # Backpropagation through the layers 
+        for l in range(2, self.num_layers):
+            z = pre_sigmoid_act[-l]
+            a = sigma_fun_derivative(z)
+            delta = self.weights[-l+1].transpose().dot(delta) * a
+            gradient_W[-l] = delta.dot(activations[-l-1].transpose())
+            gradient_b[-l] = delta
+        
+        return gradient_b, gradient_W
+
+    def cost_fun_derivative(self, out_activations, y):
+        '''Derivative of the standard cost function for a single training example.'''
+        return out_activations - y
+
 
 # Other functions
 def sigma_fun(x):
-        return 1 / (1 + np.exp(x)) # Works on vectors
+    return 1 / (1 + np.exp(x)) # Works on vectors
+
+def sigma_fun_derivative(x):
+    return -(np.exp(x) / (1 + np.exp(x))^2) # Works on vectors
     
 

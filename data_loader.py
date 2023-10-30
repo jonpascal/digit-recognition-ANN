@@ -1,7 +1,5 @@
 import struct
 import numpy as np
-import os 
-from PIL import Image, ImageOps
 
 def read_idx_ubyte(images_file, labels_file):
     '''Reads the idx files and outputs a list of tuples with pixel grayness values 
@@ -14,7 +12,7 @@ def read_idx_ubyte(images_file, labels_file):
     # Oben with rb as data should be read as a sequence of bytes rather than txt
     with open(images_file, 'rb') as f:
         # Read the magic number (first 4 bytes - uint)
-        _ = struct.unpack('>I', f.read(4))[0]
+        magic_number = struct.unpack('>I', f.read(4))[0]
 
         # Read the number of images (next 4 bytes - uint)
         num_images = struct.unpack('>I', f.read(4))[0]
@@ -33,7 +31,7 @@ def read_idx_ubyte(images_file, labels_file):
     # Read the labels associated with each image
     with open(labels_file, 'rb') as f:
         # Read the magic number (first 4 bytes - uint)
-        _ = struct.unpack('>I', f.read(4))[0]
+        magic_number = struct.unpack('>I', f.read(4))[0]
 
         # Read the number of labels (next 4 bytes - uint)
         num_labels = struct.unpack('>I', f.read(4))[0]
@@ -48,36 +46,5 @@ def read_idx_ubyte(images_file, labels_file):
     image_label_tuples = zip(images, labels)
 
     return image_label_tuples
-
-def read_test_data(folder_name=None):
-    '''Reads the images in the input_images folder and vectorises them.'''
-    if folder_name is None: 
-        folder_name = 'input_images'
-    folder_path = os.path.join(os.getcwd(), folder_name)
-
-    images = []
-
-    output_folder = os.path.join(os.getcwd(), 'processed_images')
-    os.makedirs(output_folder, exist_ok=True)
-
-    # Go through all the files in the folder 
-    for file_name in os.listdir(folder_name):
-        file_path = os.path.join(folder_path, file_name)
-        if file_name.endswith(('.jpg', '.jpeg', '.JPG', '.JPEG', '.png', '.PNG')):
-            with Image.open(file_path) as img: 
-
-                # Make the image 28x28 pixels and grayscale. We invert the picture 
-                # as it is usually written on white paper with a black marker 
-                img = img.convert('L')
-                img = img.resize((28, 28))
-                img = ImageOps.invert(img)
-
-                pixel_values = [int(value) for value in img.getdata()]
-                images.append(np.array(pixel_values))
-
-                output_path = os.path.join(output_folder, file_name)
-                img.save(output_path)
-
-    return images
 
 

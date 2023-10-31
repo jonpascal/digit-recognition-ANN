@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import time 
 
 class Network:
 
@@ -10,18 +11,18 @@ class Network:
         # The whole network has a list of np vectors as biases (vecotr per layer) 
         self.biases = [np.random.randn(y, 1) for y in sizes[1:]] 
         # The whole network has a list of np matrices as weights (matrix per layer)
-        self.weights = [np.random.randn(y, sizes[y-1]) for y in sizes[1:]] 
+        self.weights = [np.random.randn(x, y) for x, y in zip(sizes[1:], sizes[:-1])] 
 
     def __repr__(self):
         return f"Network({self.sizes})"
     
     def correct_input(self, input):
         '''Cheks if the input vecotr is the correct type and dim.'''
-        if len(input) != len(self.sizes[0]): # Check the length
+        if len(input) != self.sizes[0]: # Check the length
             return False
         if not isinstance(input, np.ndarray): # Check if it a NP vector (array)
             input = np.array(input)
-            return True
+        return True
     
     def feedforward(self, input, correct=None):
         """Runs the input a through the whole network."""
@@ -33,22 +34,32 @@ class Network:
             layer_value = sigma_fun(W.dot(layer_value) + b)
         return layer_value
     
-    def SGD(self, training_data, epochs, mini_batch_size, learning_rate):
+    def SGD(self, training_data, epochs, mini_batch_size, learning_rate, test_data=None, num=None):
         '''The learning algorythm for the network.'''
-        training_data = list(training_data)
         training_data_size = len(training_data)
+
+        if test_data is not None: 
+            num = len(test_data)
+            accuracy_progression = []
 
         # Batch the data and run through all the epochs
         for epoch in range(epochs):
+            if test_data is not None: 
+                start_time = time.time()
             random.shuffle(training_data)
-            for i in range((training_data_size // mini_batch_size) + 1):
-                try:
-                    batch = training_data[i*mini_batch_size : (i+1)*mini_batch_size]
-                    for elt in batch:
-                        self.update_mini_batch(elt, learning_rate)
-                    print(f"Epoch {epoch}/{training_data_size // mini_batch_size} complete.")
-                except IndexError:
-                    continue
+            for i in range(training_data_size // mini_batch_size):
+                batch = training_data[i*mini_batch_size : (i+1)*mini_batch_size]
+                self.update_mini_batch(batch, learning_rate)
+            if test_data is not None: 
+                accuracy = self.evaluate(test_data, num)
+                epoch_time = time.time() - start_time
+                print(f'Epoch {epoch + 1}/{epochs} complete, accuracy is {accuracy}')
+                accuracy_progression.append((accuracy, epoch, epoch_time))
+            else:
+                print(f'Epoch {epoch + 1}/{epochs} complete.')
+
+        if test_data is not None: 
+            self.accuracy = accuracy_progression
 
     def update_mini_batch(self, mini_batch, learning_rate):
         '''Applies gradient descent to the given batch.'''
@@ -65,9 +76,9 @@ class Network:
 
         # Apply the gradient descent to the network
         for i, elt in enumerate(self.biases):
-            self.biases[i] = elt - (learning_rate / len(mini_batch)) * sum(gradient_b)
+            self.biases[i] = elt - ((learning_rate / len(mini_batch)) * gradient_b[i])
         for i, elt in enumerate(self.weights):
-            self.weights[i] = elt - (learning_rate / len(mini_batch) * sum(gradient_W))
+            self.weights[i] = elt - ((learning_rate / len(mini_batch)) * gradient_W[i])
 
     def backprop(self, x, y):
         '''Calculates the gradient of the cost function with the backpropagation algorythm.'''
@@ -93,7 +104,8 @@ class Network:
         for l in range(2, self.num_layers):
             z = pre_sigmoid_act[-l]
             a = sigma_fun_derivative(z)
-            delta = self.weights[-l+1].transpose().dot(delta) * a
+            W_T = self.weights[-l+1].transpose()
+            delta = W_T.dot(delta) * a
             gradient_W[-l] = delta.dot(activations[-l-1].transpose())
             gradient_b[-l] = delta
         
@@ -102,13 +114,24 @@ class Network:
     def cost_fun_derivative(self, out_activations, y):
         '''Derivative of the standard cost function for a single training example.'''
         return out_activations - y
+    
+    def evaluate(self, test_data, num):
+        '''Evaluates the performace of the neural network.'''
+        random.shuffle(test_data)
+        test_batch = test_data[0:num]
+
+        # The 'guess' of the network is the highes activation in the last layer 
+        result = [(np.argmax(self.feedforward(x)), y) for x, y in test_batch]
+
+        return list(sum([y[x] == 1 for x, y in result]) / len(test_batch))[0]
 
 
 # Other functions
-def sigma_fun(x):
-    return 1 / (1 + np.exp(x)) # Works on vectors
+def sigma_fun(x): 
+    x = np.clip(x, -100, 100)
+    return 1 / (1 + np.exp(-x))
 
 def sigma_fun_derivative(x):
-    return -(np.exp(x) / (1 + np.exp(x))^2) # Works on vectors
+    # Not stable if the derivate is calculated by hand
+    return sigma_fun(x) * (1 - sigma_fun(x)) # Works on vectors
     
-

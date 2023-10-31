@@ -2,6 +2,7 @@ import struct
 import numpy as np
 import os 
 from PIL import Image, ImageOps
+import matplotlib.pyplot as plt
 
 def read_idx_ubyte(images_file, labels_file):
     '''Reads the idx files and outputs a list of tuples with pixel grayness values 
@@ -81,3 +82,25 @@ def read_test_data(folder_name=None):
 
     return images
 
+def create_plot_from_data(dict_name, dict_keys, title, xlabel='Epochs', ylabel='Accuracy'):
+    '''Creates a plot of the selected data stored in the dictionary dict_name.'''
+    plt.figure(figsize=(10, 6))
+    for key in dict_keys:
+        accuracy_list = dict_name[key]
+        accuracy, epochs, time = zip(*accuracy_list)
+        plt.plot(epochs, accuracy, label=f'{key}', marker='o')
+    
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend()
+    plt.grid(True)
+
+    plt.show()
+
+    total_time = sum(time)
+    minutes = total_time // 60
+    seconds = total_time - (minutes * 60)
+    print(f'The training took {int(minutes)} minutes and {round(seconds, 2)} seconds.')
+
+    

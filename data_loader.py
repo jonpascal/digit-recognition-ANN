@@ -8,9 +8,6 @@ def read_idx_ubyte(images_file, labels_file):
     as a np array for the first element and the label of the image for the second 
     element.'''
 
-    images = []
-    labels = []
-
     # Oben with rb as data should be read as a sequence of bytes rather than txt
     with open(images_file, 'rb') as f:
         # Read the magic number (first 4 bytes - uint)
@@ -29,6 +26,7 @@ def read_idx_ubyte(images_file, labels_file):
     # Convert the image data to a NumPy array
     images = list(images_data)
     images = [np.array(images[k*num_cols*num_rows : (k+1)*num_cols*num_rows]) for k in range(num_images)]
+    images = [np.reshape(image, (784, 1)) for image in images]
 
     # Read the labels associated with each image
     with open(labels_file, 'rb') as f:
@@ -41,11 +39,13 @@ def read_idx_ubyte(images_file, labels_file):
         # Read the labels as bytes
         labels_data = struct.unpack(f'>{num_labels}B', f.read())
 
+    labels = []
     for elt in labels_data: 
         labels.append(np.array([0 if elt != i else 1 for i in range(10)]))
+    labels = [np.reshape(label, (10, 1)) for label in labels]
 
     # Iterate through the images and convert them to 784-long vectors and create tuples
-    image_label_tuples = zip(images, labels)
+    image_label_tuples = list(zip(images, labels))
 
     return image_label_tuples
 
@@ -74,10 +74,10 @@ def read_test_data(folder_name=None):
 
                 pixel_values = [int(value) for value in img.getdata()]
                 images.append(np.array(pixel_values))
+                images = [np.resize(image, (784, 1)) for image in images]
 
                 output_path = os.path.join(output_folder, file_name)
                 img.save(output_path)
 
     return images
-
 

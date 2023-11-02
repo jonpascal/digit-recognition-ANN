@@ -28,8 +28,8 @@ For Jupyter notebook to work properly download at least:
 Store all the files in the same folder. Inside that folder you should also create a floder named 'input_images', for the last part of the Jupyter notebook to work.
 
 Other requirements include:
-- pyhton 3.7.0 or later 
-- numpy 1.13.3 or leter
+- pyhton 
+- numpy 
 - matplotlib.pyplot 
 - Pillow 
 

@@ -45,14 +45,21 @@ sizes = [784, 96, 48, 10]
 # Number of epochs
 data = {}
 
-for num_epochs in [5, 10, 30, 50]: 
-    random.seed(12345678)
-    np.random.seed(12345678)
-    network = Network(sizes)
-    network.SGD(training_data, num_epochs, 25, 0.08, testing_data, 100)
-    data[f'W_784.96.48.10_{num_epochs}_25_0.08_e'] = network.weights
-    data[f'b_784.96.48.10_{num_epochs}_25_0.08_e'] = network.biases
-    data[f'a_784.96.48.10_{num_epochs}_25_0.08_e'] = network.accuracy
+random.seed(12345678)
+np.random.seed(12345678)
+network = Network(sizes)
+network.SGD(training_data, 500, 25, 0.08, training_data, 100)
+data[f'W_784.96.48.10_500_25_0.08_tr'] = network.weights
+data[f'b_784.96.48.10_500_25_0.08_tr'] = network.biases
+data[f'a_784.96.48.10_500_25_0.08_tr'] = network.accuracy
+
+random.seed(12345678)
+np.random.seed(12345678)
+network = Network(sizes)
+network.SGD(training_data, 500, 25, 0.08, testing_data, 100)
+data[f'W_784.96.48.10_500_25_0.08_te'] = network.weights
+data[f'b_784.96.48.10_500_25_0.08_te'] = network.biases
+data[f'a_784.96.48.10_500_25_0.08_te'] = network.accuracy
 
 all_data.update(data)
 

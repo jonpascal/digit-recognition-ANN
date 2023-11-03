@@ -85,9 +85,11 @@ def read_test_data(folder_name=None):
 def create_plot_from_data(dict_name, dict_keys, title, xlabel='Epochs', ylabel='Accuracy'):
     '''Creates a plot of the selected data stored in the dictionary dict_name.'''
     plt.figure(figsize=(10, 6))
+    times = []
     for key in dict_keys:
         accuracy_list = dict_name[key]
         accuracy, epochs, time = zip(*accuracy_list)
+        times.append(time)
         plt.plot(epochs, accuracy, label=f'{key}', marker='o')
     
     plt.title(title)
@@ -98,9 +100,11 @@ def create_plot_from_data(dict_name, dict_keys, title, xlabel='Epochs', ylabel='
 
     plt.show()
 
-    total_time = sum(time)
-    minutes = total_time // 60
-    seconds = total_time - (minutes * 60)
-    print(f'The training took {int(minutes)} minutes and {round(seconds, 2)} seconds.')
+    # Print the training times for each network
+    for key, time in zip(dict_keys, times):
+        total_time = sum(time)
+        minutes = total_time // 60
+        seconds = total_time - (minutes * 60)
+        print(f'The training took for {key} netwrok took {int(minutes)} minutes and {round(seconds, 2)} seconds.')
 
     
